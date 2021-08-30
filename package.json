@@ -16,5 +16,7 @@
     "url": "https://github.com/zinemmo/8-puzzle/issues"
   },
   "homepage": "https://github.com/zinemmo/8-puzzle#readme",
-  "dependencies": {}
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
 }

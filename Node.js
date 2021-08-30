@@ -15,10 +15,9 @@ class Node {
     ];
     const children = [];
     availablePositions.forEach((element, index) => {
-      console.log(element, index);
       const child = this.shuffle(this.puzzle, i, j, element[0], element[1]);
       if (child) {
-        child_node = Node(child, this.level + 1, 0);
+        const child_node = new Node(child, this.level + 1, 0);
         children.push(child_node);
       }
     });
@@ -33,7 +32,7 @@ class Node {
       y2 >= 0 &&
       y2 < this.puzzle.length
     ) {
-      temp_puzzle = this.copy(puzzle);
+      temp_puzzle = puzzle;
       aux = temp_puzzle[x2][y2];
       temp_puzzle[x2][y2] = temp_puzzle[x1][y1];
       temp_puzzle[x1][y1] = aux;
@@ -41,24 +40,6 @@ class Node {
     }
 
     return null;
-  }
-
-  copy(root) {
-    // TODO: Refactor and review this function as it may not be necessary in JS
-    let i, j;
-    const aux = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ];
-    for (i = 0; i < 3; i++) {
-      let t = [];
-      for (j = 0; j < 3; j++) {
-        t.push(j);
-      }
-      aux.push(t);
-    }
-    return aux;
   }
 
   find(initialState) {
@@ -88,6 +69,7 @@ class Puzzle {
     const puz = [];
     for (i = 0; i < this.size; i++) {
       // TODO: break user input, as this will be done in Vue or react I don't know whats the best option
+        
     }
   }
 
@@ -101,11 +83,41 @@ class Puzzle {
       j;
     for (i = 0; i < this.size; i++) {
       for (j = 0; j < this.size; j++) {
-        if (start[i][j] != goal[i][j] && start[i][j] != '') {
+        if (start[i][j] != goal[i][j] && start[i][j] != null) {
           temp++;
         }
       }
     }
     return temp;
   }
+
+  process() {
+    let start = [
+      [ 0, 1, 2],
+      [4, null, 6],
+      [5, 7, 8]
+    ];
+    let goal = [
+      [ 0, 1, 2],
+      [4, null, 5],
+      [6, 7, 8]
+    ];
+
+    start = new Node(start,0,0);
+    start.fval = this.f(start, goal);
+    this.open.push(start);
+    let cur = this.open[0];
+    console.log("CURRENT - ", cur);
+    if(this.h(cur.puzzle, goal) == 0) {
+      console.log("CAIU FORA");
+    }
+
+    const newChild = cur.generate_child();
+    newChild.forEach(ele => {
+      console.log(ele)
+    })
+  }
 }
+
+const puz = new Puzzle(3);
+puz.process();
