@@ -1,11 +1,11 @@
-1	Create a node containing the goal state node_goal
-2	Create a node containing the start state node_start
-3	Put node_start on the open list
-4	while the OPEN list is not empty
-5	{
-6	Get the node off the open list with the lowest f and call it node_current
-7	if node_current is the same state as node_goal we have found the solution; break from the while loop
-8	    Generate each state node_successor that can come after node_current
+Create a node containing the goal state node_goal
+Create a node containing the start state node_start
+Put node_start on the open list
+while the OPEN list is not empty
+{
+  Get the node off the open list with the lowest f and call it node_current
+	if node_current is the same state as node_goal we have found the solution; break from the while loop
+  Generate each state node_successor that can come after node_current
 9	    for each node_successor of node_current
 10	    {
 11	        Set the cost of node_successor to be the cost of node_current plus the cost to get to node_successor from node_current
