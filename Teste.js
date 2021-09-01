@@ -43,179 +43,6 @@ const getPosition = (puzzle) => {
   return [xPos, yPos];
 };
 
-// const createNode = (puzzle, movement) => {
-//   switch (movement) {
-//     case 'Right':
-//       return moveRight(puzzle);
-//     case 'Left':
-//       return moveLeft(puzzle);
-//     case 'Up':
-//       return moveUp(puzzle);
-//     case 'Down':
-//       return moveDown(puzzle);
-//     default:
-//       break;
-//   }
-// };
-
-// const moveRight = (puzzle) => {
-//   console.log('Right');
-//   const [x, y] = getPosition(puzzle);
-//   let row = puzzle[y];
-//   [row[x], row[x + 1]] = [row[x + 1], row[x]];
-//   puzzle[y] = row;
-//   console.log(puzzle);
-//   return puzzle;
-// };
-
-// const moveLeft = (puzzle) => {
-//   console.log('Left');
-//   const [x, y] = getPosition(puzzle);
-//   let row = puzzle[y];
-//   [row[x], row[x - 1]] = [row[x - 1], row[x]];
-//   puzzle[y] = row;
-//   console.log('Move', puzzle);
-//   return puzzle;
-// };
-
-// const moveUp = (puzzle) => {
-//   console.log('Up');
-//   const [x, y] = getPosition(puzzle);
-//   let [curRow, upperRow] = [puzzle[y], puzzle[y + 1]];
-//   const aux = curRow[x];
-//   curRow[x] = upperRow[x];
-//   upperRow[x] = aux;
-//   puzzle[y] = curRow;
-//   puzzle[y + 1] = upperRow;
-//   console.log(puzzle);
-//   return puzzle;
-// };
-
-// const moveDown = (puzzle) => {
-//   console.log('Down');
-//   const [x, y] = getPosition(puzzle);
-//   console.log(puzzle);
-//   let [curRow, lowerRow] = [puzzle[y], puzzle[y - 1]];
-//   const aux = curRow[x];
-//   curRow[x] = lowerRow[x];
-//   lowerRow[x] = aux;
-//   puzzle[y] = curRow;
-//   puzzle[y - 1] = lowerRow;
-//   console.log(puzzle);
-//   return puzzle;
-// };
-
-// PUZZLE
-// const movePiece = (currentPuzzle) => {
-//   const blankStartPosition = getPosition(currentPuzzle);
-//   const movements = checkPossibleMovements(blankStartPosition);
-
-//   if (!movements) {
-//     console.log('movePiece Error');
-//   }
-
-//   this.createChildren(movements);
-// };
-
-// const checkPossibleMovements = (positions) => {
-//   let possibleMovements;
-//   switch (JSON.stringify(positions)) {
-//     case JSON.stringify([0, 0]):
-//       possibleMovements = TOP_LEFT;
-//       break;
-//     case JSON.stringify([1, 0]):
-//       possibleMovements = TOP_MIDDLE;
-//       break;
-//     case JSON.stringify([2, 0]):
-//       possibleMovements = TOP_RIGHT;
-//       break;
-//     case JSON.stringify([0, 1]):
-//       possibleMovements = MIDDLE_LEFT;
-//       break;
-//     case JSON.stringify([1, 1]):
-//       possibleMovements = MIDDLE;
-//       break;
-//     case JSON.stringify([2, 1]):
-//       possibleMovements = MIDDLE_RIGHT;
-//       break;
-//     case JSON.stringify([0, 2]):
-//       possibleMovements = BOTTOM_LEFT;
-//       break;
-//     case JSON.stringify([1, 2]):
-//       possibleMovements = BOTTOM_MIDDLE;
-//       break;
-//     case JSON.stringify([2, 2]):
-//       possibleMovements = BOTTOM_RIGHT;
-//       break;
-//     default:
-//       console.log('ERROR');
-//       break;
-//   }
-
-//   return possibleMovements;
-// };
-
-// const selectCurrent = (height, children) => {
-//   children;
-// };
-
-// const createChildren = (movements, goal, currentPuzzle, height) => {
-//   const newNodes = movements.map((movement) => {
-//     return {
-//       puzzle: createNode(_.cloneDeep(currentPuzzle), movement),
-//       height,
-//     };
-//   });
-
-//   return newNodes.map((ele) => {
-//     return {
-//       ...ele,
-//       distance: heuristic(ele.puzzle, goal, height),
-//     };
-//   });
-// };
-
-// const solve = (solution, nodes) => {
-//   // Check if start is equal to goal
-//   if (JSON.stringify(solution.start) == JSON.stringify(solution.goal)) {
-//     return true;
-//   }
-
-//   // Check initial position and movements
-//   const initialPosition = getPosition(solution.current);
-//   const initialMovements = checkPossibleMovements(initialPosition);
-//   const children = createChildren(
-//     initialMovements,
-//     _.cloneDeep(solution.goal),
-//     _.cloneDeep(solution.current),
-//     _.cloneDeep(solution.height)
-//   );
-
-//   if (
-//     children.find(
-//       (child) => JSON.stringify(child.puzzle) == JSON.stringify(solution.goal)
-//     )
-//   ) {
-//     console.log('Found a solution');
-//     return true;
-//   }
-
-//   // Select current and add height
-//   // TODO: create function to select the closest to the goal as the new current
-
-//   solution.height = 1;
-
-//   console.log('Children Created', children);
-
-//   let found = null;
-//   while (!found) {
-//     // TODO: check if current is equal to solution
-//     // TODO: create children based on the
-//   }
-
-//   // while (JSON.stringify(solution.start) != JSON.stringify(solution.goal)) {}
-// };
-
 class Node {
   constructor(level, current, movement, goal, initial) {
     this.level = level;
@@ -266,12 +93,11 @@ class Node {
   moveUp(currentPuzzle) {
     console.log('Up');
     const [x, y] = getPosition(currentPuzzle);
-    let [curRow, upperRow] = [currentPuzzle[y], currentPuzzle[y + 1]];
+    let curRow = currentPuzzle[y];
+    let lowerRow = currentPuzzle[y - 1];
     const aux = curRow[x];
-    curRow[x] = upperRow[x];
-    upperRow[x] = aux;
-    currentPuzzle[y] = curRow;
-    currentPuzzle[y + 1] = upperRow;
+    curRow[x] = lowerRow[x];
+    lowerRow[x] = aux;
     console.log('Move', currentPuzzle);
     return currentPuzzle;
   }
@@ -280,21 +106,20 @@ class Node {
     console.log('Down');
     const [x, y] = getPosition(currentPuzzle);
     console.log(currentPuzzle);
-    let [curRow, lowerRow] = [currentPuzzle[y], currentPuzzle[y - 1]];
+    let curRow = currentPuzzle[y];
+    let upperRow = currentPuzzle[y + 1];
     const aux = curRow[x];
-    curRow[x] = lowerRow[x];
-    lowerRow[x] = aux;
-    currentPuzzle[y] = curRow;
-    currentPuzzle[y - 1] = lowerRow;
+    curRow[x] = upperRow[x];
+    upperRow[x] = aux;
     console.log('Move', currentPuzzle);
     return currentPuzzle;
   }
 
   heuristic() {
-    return this.distance() + this.level;
+    return this.distanceFunction() + this.level;
   }
 
-  distance() {
+  distanceFunction() {
     let i,
       j,
       cont = 0;
@@ -341,8 +166,10 @@ class Puzzle {
     );
 
     let onlyDistances, lowestFIndex, blankPosition, possibleMovements;
-
+    // TODO: need to compare with the closed list each iteration before creating new node
+    // TODO: if there are multiple children with the same distance need to create aux to store it
     while (!this.solved) {
+      this.height++;
       // Reset variables
       this.children = null;
       // Find the node with the lowest distance
@@ -357,7 +184,6 @@ class Puzzle {
         this.solved = true;
       }
       // If is not equal we need to move the pieces and create more nodes
-      // Start generating all possible children node
       // Get the position of the blank value
       blankPosition = getPosition(this.current.puzzle);
       // Get the possible movements from the blank value position
@@ -369,10 +195,26 @@ class Puzzle {
         _.cloneDeep(this.current.puzzle),
         _.cloneDeep(this.height)
       );
-
-      this.children.forEach((childNode) => {});
-
+      // Add current to the closed array
+      this.closed.push(_.cloneDeep(this.current));
+      // Add children to the open list
+      this.open = _.cloneDeep(this.children);
+      // Verify what node will be the next to generate children
       console.log(this.children);
+      // TODO: Verify if exists on closed, verify if all have the same distance and if the lowest distance is the goal
+      if (
+        this.open.find(
+          (ele) => JSON.stringify(ele.puzzle) == JSON.stringify(this.goal)
+        )
+      ) {
+        this.solved = true;
+      }
+
+      console.log(this.open);
+      this.open = this.open.filter((ele) => !this.closed.includes(ele));
+      console.log(this.open);
+
+      if (this.open.filter()) console.log(this.children);
       this.solved = true;
     }
 
@@ -453,15 +295,15 @@ class Puzzle {
 }
 
 const start = [
-  [1, 2, 3],
-  [4, 5, 0],
-  [6, 7, 8],
+  [4, 2, 3],
+  [1, 0, 5],
+  [8, 7, 6],
 ];
 
 const goal = [
-  [4, 2, 3],
-  [0, 1, 5],
-  [6, 7, 8],
+  [1, 2, 3],
+  [8, 0, 4],
+  [7, 6, 5],
 ];
 
 const solver = new Puzzle(start, goal);
