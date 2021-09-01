@@ -114,9 +114,9 @@ class Node {
     console.log('Move', currentPuzzle);
     return currentPuzzle;
   }
-
+  // FIXME: + this.height
   heuristic() {
-    return this.distanceFunction() + this.level;
+    return this.distanceFunction();
   }
 
   distanceFunction() {
@@ -146,6 +146,7 @@ class Puzzle {
     // Aux values
     this.solved = null;
     this.children = [];
+    this.otherOpened = [];
   }
 
   solve() {
@@ -165,13 +166,19 @@ class Puzzle {
       )
     );
 
-    let onlyDistances, lowestFIndex, blankPosition, possibleMovements;
-    // TODO: need to compare with the closed list each iteration before creating new node
+    let onlyDistances,
+      lowestFIndex,
+      lowestDistanceNode,
+      blankPosition,
+      possibleMovements,
+      nodesFound,
+      aux;
     // TODO: if there are multiple children with the same distance need to create aux to store it
-    while (!this.solved) {
+    while (this.solved < 1000) {
       this.height++;
       // Reset variables
       this.children = null;
+      nodesFound = [];
       // Find the node with the lowest distance
       onlyDistances = this.open.map((ele) => ele.distance);
       lowestFIndex = onlyDistances.indexOf(Math.min(...onlyDistances));
@@ -179,9 +186,10 @@ class Puzzle {
       // Copy the lowest distance to the current node
       this.current = _.cloneDeep(this.open[lowestFIndex]);
       // Verify if the current is equal as the goal
-      if (JSON.stringify(this.current) == JSON.stringify(this.goal)) {
+      if (_.isEqual(this.current.puzzle, this.goal)) {
         // If is equal, than we found a solution
-        this.solved = true;
+        this.closed.push(this.current);
+        break;
       }
       // If is not equal we need to move the pieces and create more nodes
       // Get the position of the blank value
@@ -197,50 +205,38 @@ class Puzzle {
       );
       // Add current to the closed array
       this.closed.push(_.cloneDeep(this.current));
+      // TODO: remove children that exist on the closed array
+
       // Add children to the open list
       this.open = _.cloneDeep(this.children);
       // Verify what node will be the next to generate children
-      console.log(this.children);
-      // TODO: Verify if exists on closed, verify if all have the same distance and if the lowest distance is the goal
-      if (
-        this.open.find(
-          (ele) => JSON.stringify(ele.puzzle) == JSON.stringify(this.goal)
-        )
-      ) {
-        this.solved = true;
+
+      // TODO: verify if all have the same distance and if the lowest distance is the goal
+      // if (this.open.find((ele) => _.isEqual(ele.puzzle, this.goal))) {
+      //   this.solved = true;
+      // }
+
+      // Filter open list to remove occurrences of closed list
+      console.log('Before filter', this.open);
+      this.open.forEach((ele) => {
+        if (
+          this.closed.some((closeEle) => _.isEqual(closeEle.puzzle, ele.puzzle))
+        ) {
+          nodesFound.push(ele.puzzle);
+        }
+      });
+
+      if (nodesFound.length > 0) {
+        this.open = this.open.filter((ele) =>
+          nodesFound.some(
+            (nodeEle) => JSON.stringify(ele.puzzle) !== JSON.stringify(nodeEle)
+          )
+        );
       }
-
-      console.log(this.open);
-      this.open = this.open.filter((ele) => !this.closed.includes(ele));
-      console.log(this.open);
-
-      if (this.open.filter()) console.log(this.children);
-      this.solved = true;
+      console.log('After filter', this.open);
     }
 
-    // if (
-    //   children.find(
-    //     (child) => JSON.stringify(child.puzzle) == JSON.stringify(this.goal)
-    //   )
-    // ) {
-    //   console.log('Found a solution');
-    //   return true;
-    // }
-
-    // Select current and add height
-    // TODO: create function to select the closest to the goal as the new current
-
-    // this.height = 1;
-
-    // console.log('Children Created', children);
-
-    // let found = null;
-    // while (!found) {
-    //   // TODO: check if current is equal to solution
-    //   // TODO: create children based on the
-    // }
-
-    // while (JSON.stringify(solution.start) != JSON.stringify(solution.goal)) {}
+    return this.closed;
   }
 
   selectCurrent(height, children) {
@@ -295,8 +291,8 @@ class Puzzle {
 }
 
 const start = [
-  [4, 2, 3],
-  [1, 0, 5],
+  [0, 2, 3],
+  [1, 4, 5],
   [8, 7, 6],
 ];
 
@@ -307,4 +303,4 @@ const goal = [
 ];
 
 const solver = new Puzzle(start, goal);
-solver.solve();
+console.log(solver.solve());
