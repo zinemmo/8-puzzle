@@ -9,29 +9,11 @@ const MIDDLE_LEFT = new Array('Right', 'Up', 'Down');
 const BOTTOM_RIGHT = new Array('Left', 'Up');
 const BOTTOM_MIDDLE = new Array('Left', 'Up', 'Right');
 const BOTTOM_LEFT = new Array('Right', 'Up');
-// TODO: Transform into Classes, use TypeScript and create Front-End
-// HEURISTICS
-// const heuristic = (current, goal, height) => distance(current, goal) + height;
 
-// const distance = (current, goal) => {
-//   let i,
-//     j,
-//     cont = 0;
-//   for (i = 0; i < 3; i++) {
-//     for (j = 0; j < 3; j++) {
-//       if (current[i][j] != goal[i][j] && current[i][j] != 0) {
-//         cont++;
-//       }
-//     }
-//   }
-//   return cont;
-// };
-
-// NODE
-const getPosition = (puzzle) => {
+const getPosition = (puzzle, value = 0) => {
   let yPos, xPos;
   puzzle.forEach((array, index) => {
-    const position = array.findIndex((ele) => ele == 0);
+    const position = array.findIndex((ele) => ele == value);
     if (position >= 0) {
       yPos = index;
       xPos = position;
@@ -114,7 +96,7 @@ class Node {
     console.log('Move', currentPuzzle);
     return currentPuzzle;
   }
-  // FIXME: + this.height
+
   heuristic() {
     return this.distanceFunction();
   }
@@ -122,11 +104,15 @@ class Node {
   distanceFunction() {
     let i,
       j,
-      cont = 0;
+      cont = 0,
+      x,
+      y;
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
+        value = this.puzzle[i][j];
         if (this.puzzle[i][j] != this.goal[i][j] && this.puzzle[i][j] != 0) {
-          cont++;
+          [x, y] = getPosition(this.goal, this.puzzle[i][j]);
+          cont += Math.abs(x - j) + Math.abs(y - i);
         }
       }
     }
@@ -142,17 +128,24 @@ class Puzzle {
     this.current = start;
     this.open = [];
     this.closed = [];
+    this.repeatedDistance = [];
     this.height = 0;
     // Aux values
     this.solved = null;
     this.children = [];
-    this.otherOpened = [];
+    this.allOpened = [];
   }
 
   solve() {
     // Check if start is equal to goal
-    if (JSON.stringify(this.current) == JSON.stringify(this.goal)) {
-      return true;
+    if (_.isEqual(this.current, this.goal)) {
+      return new Node(
+        this.height,
+        _.cloneDeep(this.start),
+        null,
+        _.cloneDeep(this.goal),
+        true
+      );
     }
 
     // If start is different than goal crete node and insert into open array
@@ -168,12 +161,12 @@ class Puzzle {
 
     let onlyDistances,
       lowestFIndex,
-      lowestDistanceNode,
       blankPosition,
       possibleMovements,
       nodesFound,
-      aux;
-    // TODO: if there are multiple children with the same distance need to create aux to store it
+      lowestValue,
+      lowestValueArray;
+
     while (this.solved < 1000) {
       this.height++;
       // Reset variables
@@ -181,7 +174,19 @@ class Puzzle {
       nodesFound = [];
       // Find the node with the lowest distance
       onlyDistances = this.open.map((ele) => ele.distance);
-      lowestFIndex = onlyDistances.indexOf(Math.min(...onlyDistances));
+      lowestValue = Math.min(...onlyDistances);
+      lowestFIndex = onlyDistances.indexOf(lowestValue);
+      lowestValueArray = onlyDistances.reduce(
+        (acc, ele, i) => (ele === lowestValue ? acc.concat(i) : acc),
+        []
+      );
+      // If there are open nodes with the same distance we should iterate through them
+      // if (new Set(onlyDistances).size !== onlyDistances.length) {
+      //   console.log('Caiu aqui dentro');
+      // }
+      if (lowestValueArray.length > 1) {
+        console.log('Opa');
+      }
       console.log('Lowest distance index', lowestFIndex);
       // Copy the lowest distance to the current node
       this.current = _.cloneDeep(this.open[lowestFIndex]);
@@ -205,7 +210,6 @@ class Puzzle {
       );
       // Add current to the closed array
       this.closed.push(_.cloneDeep(this.current));
-      // TODO: remove children that exist on the closed array
 
       // Add children to the open list
       this.open = _.cloneDeep(this.children);
@@ -236,6 +240,7 @@ class Puzzle {
       console.log('After filter', this.open);
     }
 
+    // TODO: maintain an aux that stores all opened list, filter by the final closed list on the end;
     return this.closed;
   }
 
@@ -290,10 +295,18 @@ class Puzzle {
   }
 }
 
+// EASY
+// const start = [
+//   [1, 3, 4],
+//   [8, 6, 2],
+//   [0, 7, 5],
+// ];
+
+// MEDIUM
 const start = [
-  [0, 2, 3],
-  [1, 4, 5],
-  [8, 7, 6],
+  [2, 8, 1],
+  [0, 4, 3],
+  [7, 6, 5],
 ];
 
 const goal = [
@@ -301,6 +314,8 @@ const goal = [
   [8, 0, 4],
   [7, 6, 5],
 ];
+
+// Puzzle correctly done: EASY
 
 const solver = new Puzzle(start, goal);
 console.log(solver.solve());
