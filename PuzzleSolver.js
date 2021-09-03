@@ -1,4 +1,6 @@
 const _ = require('lodash');
+const uuid = require('uuid');
+
 const ALL_POSITIONS = new Array('Right', 'Left', 'Up', 'Down');
 const TOP_RIGHT = new Array('Left', 'Down');
 const TOP_MIDDLE = new Array('Right', 'Left', 'Down');
@@ -26,7 +28,7 @@ const getPosition = (puzzle, value = 0) => {
 };
 
 class Node {
-  constructor(level, current, movement, goal, initial) {
+  constructor(level, current, movement, goal, initial, father) {
     this.level = level;
     if (!initial) {
       this.puzzle = this.createNode(current, movement);
@@ -35,6 +37,9 @@ class Node {
     }
     this.goal = goal;
     this.distance = this.heuristic();
+    // For children nodes
+    this.id = uuid.v4();
+    this.father = father;
   }
 
   createNode(currentPuzzle, movement) {
@@ -109,7 +114,6 @@ class Node {
       y;
     for (i = 0; i < 3; i++) {
       for (j = 0; j < 3; j++) {
-        value = this.puzzle[i][j];
         if (this.puzzle[i][j] != this.goal[i][j] && this.puzzle[i][j] != 0) {
           [x, y] = getPosition(this.goal, this.puzzle[i][j]);
           cont += Math.abs(x - j) + Math.abs(y - i);
@@ -133,7 +137,7 @@ class Puzzle {
     // Aux values
     this.solved = null;
     this.children = [];
-    this.allOpened = [];
+    this.fatherOpened = [];
   }
 
   solve() {
@@ -165,13 +169,16 @@ class Puzzle {
       possibleMovements,
       nodesFound,
       lowestValue,
-      lowestValueArray;
+      lowestValueArray,
+      father,
+      fatherCheck;
 
     while (this.solved < 1000) {
       this.height++;
       // Reset variables
       this.children = null;
       nodesFound = [];
+      this.current = null;
       // Find the node with the lowest distance
       onlyDistances = this.open.map((ele) => ele.distance);
       lowestValue = Math.min(...onlyDistances);
@@ -181,66 +188,136 @@ class Puzzle {
         []
       );
       // If there are open nodes with the same distance we should iterate through them
-      // if (new Set(onlyDistances).size !== onlyDistances.length) {
-      //   console.log('Caiu aqui dentro');
-      // }
       if (lowestValueArray.length > 1) {
-        console.log('Opa');
-      }
-      console.log('Lowest distance index', lowestFIndex);
-      // Copy the lowest distance to the current node
-      this.current = _.cloneDeep(this.open[lowestFIndex]);
-      // Verify if the current is equal as the goal
-      if (_.isEqual(this.current.puzzle, this.goal)) {
-        // If is equal, than we found a solution
-        this.closed.push(this.current);
-        break;
-      }
-      // If is not equal we need to move the pieces and create more nodes
-      // Get the position of the blank value
-      blankPosition = getPosition(this.current.puzzle);
-      // Get the possible movements from the blank value position
-      possibleMovements = this.checkPossibleMovements(blankPosition);
-      // Generate children nodes based on possible movements
-      this.children = this.createChildren(
-        possibleMovements,
-        _.cloneDeep(this.goal),
-        _.cloneDeep(this.current.puzzle),
-        _.cloneDeep(this.height)
-      );
-      // Add current to the closed array
-      this.closed.push(_.cloneDeep(this.current));
+        this.fatherOpened = [];
+        // TODO: Put bigger fValues on the open list
+        // Create an array with only the equal values
+        father = this.open.filter((ele) => ele.distance == lowestValue);
+        // Create all children from the parents, push fathers to the closed list
+        father.forEach((ele) => {
+          if (_.isEqual(ele.puzzle, this.goal)) {
+            this.current = _.cloneDeep(ele);
+          }
+          this.closed.push(_.cloneDeep(ele));
+          _.remove(this.open, (openEle) =>
+            _.isEqual(ele.puzzle, openEle.puzzle)
+          );
+          blankPosition = getPosition(ele.puzzle);
+          possibleMovements = this.checkPossibleMovements(blankPosition);
+          this.fatherOpened.push(
+            this.createChildren(
+              possibleMovements,
+              _.cloneDeep(this.goal),
+              _.cloneDeep(ele.puzzle),
+              _.cloneDeep(this.height),
+              ele.id
+            )
+          );
+        });
 
-      // Add children to the open list
-      this.open = _.cloneDeep(this.children);
-      // Verify what node will be the next to generate children
-
-      // TODO: verify if all have the same distance and if the lowest distance is the goal
-      // if (this.open.find((ele) => _.isEqual(ele.puzzle, this.goal))) {
-      //   this.solved = true;
-      // }
-
-      // Filter open list to remove occurrences of closed list
-      console.log('Before filter', this.open);
-      this.open.forEach((ele) => {
-        if (
-          this.closed.some((closeEle) => _.isEqual(closeEle.puzzle, ele.puzzle))
-        ) {
-          nodesFound.push(ele.puzzle);
+        if (this.current) {
+          break;
         }
-      });
+        // Get what puzzles exist on children that will be removed by the filter
+        console.log('Before filter', this.open);
+        this.fatherOpened.forEach((ele) => {
+          if (ele.length > 1) {
+            ele.forEach((element) => {
+              if (
+                this.closed.some((closeEle) =>
+                  _.isEqual(closeEle.puzzle, element.puzzle)
+                )
+              ) {
+                nodesFound.push(element.puzzle);
+              }
+            });
+          } else {
+            if (
+              this.closed.some((closeEle) =>
+                _.isEqual(closeEle.puzzle, element.puzzle)
+              )
+            ) {
+              nodesFound.push(element.puzzle);
+            }
+          }
+        });
 
-      if (nodesFound.length > 0) {
-        this.open = this.open.filter((ele) =>
-          nodesFound.some(
-            (nodeEle) => JSON.stringify(ele.puzzle) !== JSON.stringify(nodeEle)
-          )
+        if (nodesFound.length > 0) {
+          let aux = [];
+          // Remove all closed occurrences
+          this.fatherOpened.forEach((element) => {
+            aux.push(
+              element.filter((ele) =>
+                nodesFound.some(
+                  (nodeEle) =>
+                    JSON.stringify(ele.puzzle) !== JSON.stringify(nodeEle)
+                )
+              )
+            );
+          });
+          // Put all on the open list
+          if (aux.length > 0) {
+            aux.forEach((ele) => {
+              ele.forEach((element) => {
+                this.open.push(_.cloneDeep(element));
+              });
+            });
+          }
+        }
+
+        console.log('After filter', this.open);
+      } else {
+        console.log('Lowest distance index', lowestFIndex);
+        // Copy the lowest distance to the current node
+        this.current = _.cloneDeep(this.open[lowestFIndex]);
+        // Verify if the current is equal as the goal
+        if (_.isEqual(this.current.puzzle, this.goal)) {
+          // If is equal, than we found a solution
+          this.closed.push(this.current);
+          break;
+        }
+        // If is not equal we need to move the pieces and create more nodes
+        // Get the position of the blank value
+        blankPosition = getPosition(this.current.puzzle);
+        // Get the possible movements from the blank value position
+        possibleMovements = this.checkPossibleMovements(blankPosition);
+        // Generate children nodes based on possible movements
+        this.children = this.createChildren(
+          possibleMovements,
+          _.cloneDeep(this.goal),
+          _.cloneDeep(this.current.puzzle),
+          _.cloneDeep(this.height)
         );
+        // Add current to the closed array
+        this.closed.push(_.cloneDeep(this.current));
+        // Add children to the open list
+        this.open = _.cloneDeep(this.children);
+
+        // Filter open list to remove occurrences of closed list
+        console.log('Before filter', this.open);
+        this.open.forEach((ele) => {
+          if (
+            this.closed.some((closeEle) =>
+              _.isEqual(closeEle.puzzle, ele.puzzle)
+            )
+          ) {
+            nodesFound.push(ele.puzzle);
+          }
+        });
+
+        if (nodesFound.length > 0) {
+          this.open = this.open.filter((ele) =>
+            nodesFound.some(
+              (nodeEle) =>
+                JSON.stringify(ele.puzzle) !== JSON.stringify(nodeEle)
+            )
+          );
+        }
+        console.log('After filter', this.open);
       }
-      console.log('After filter', this.open);
+      console.log(this.height);
     }
 
-    // TODO: maintain an aux that stores all opened list, filter by the final closed list on the end;
     return this.closed;
   }
 
@@ -248,9 +325,17 @@ class Puzzle {
     children;
   }
 
-  createChildren(movements, goal, currentPuzzle, height) {
+  createChildren(movements, goal, currentPuzzle, height, father) {
     const newNodes = movements.map(
-      (movement) => new Node(height, _.cloneDeep(currentPuzzle), movement, goal)
+      (movement) =>
+        new Node(
+          height,
+          _.cloneDeep(currentPuzzle),
+          movement,
+          goal,
+          false,
+          father
+        )
     );
 
     return newNodes;
