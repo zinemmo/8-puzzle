@@ -435,7 +435,5 @@ const goal = [
   [7, 6, 5],
 ];
 
-// Puzzle correctly done: EASY, MEDIUM
-
 const solver = new Puzzle(start, goal);
 console.log(solver.solve());
