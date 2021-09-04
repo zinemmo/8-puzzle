@@ -103,7 +103,7 @@ class Node {
   }
 
   heuristic() {
-    return this.distanceFunction();
+    return this.distanceFunction() + this.level;
   }
 
   distanceFunction() {
@@ -171,10 +171,10 @@ class Puzzle {
       lowestValue,
       lowestValueArray,
       father,
-      fatherCheck;
+      existLower,
+      lowerNodes;
 
-    while (this.solved < 1000) {
-      this.height++;
+    while (true) {
       // Reset variables
       this.children = null;
       nodesFound = [];
@@ -187,12 +187,34 @@ class Puzzle {
         (acc, ele, i) => (ele === lowestValue ? acc.concat(i) : acc),
         []
       );
+      lowerNodes = _.cloneDeep(
+        this.open.filter((notUsed, index) =>
+          lowestValueArray.some((ele) => ele == index)
+        )
+      );
+
+      existLower =
+        Math.min(...lowerNodes.map((ele) => ele.level)) < this.height
+          ? true
+          : false;
+
+      if (new Set(onlyDistances).size == 1 && existLower) {
+        // Reset height
+        this.height = Math.min(...lowerNodes.map((ele) => ele.level));
+        lowestValueArray = _.cloneDeep(
+          this.open.filter(
+            (ele) => ele.distance == lowestValue && ele.level == this.height
+          )
+        );
+      }
+
       // If there are open nodes with the same distance we should iterate through them
       if (lowestValueArray.length > 1) {
         this.fatherOpened = [];
-        // TODO: Put bigger fValues on the open list
         // Create an array with only the equal values
-        father = this.open.filter((ele) => ele.distance == lowestValue);
+        father = this.open.filter(
+          (ele) => ele.distance == lowestValue && ele.level == this.height
+        );
         // Create all children from the parents, push fathers to the closed list
         father.forEach((ele) => {
           if (_.isEqual(ele.puzzle, this.goal)) {
@@ -209,7 +231,7 @@ class Puzzle {
               possibleMovements,
               _.cloneDeep(this.goal),
               _.cloneDeep(ele.puzzle),
-              _.cloneDeep(this.height),
+              _.cloneDeep(this.height + 1),
               ele.id
             )
           );
@@ -286,15 +308,16 @@ class Puzzle {
           possibleMovements,
           _.cloneDeep(this.goal),
           _.cloneDeep(this.current.puzzle),
-          _.cloneDeep(this.height)
+          _.cloneDeep(this.height + 1)
         );
         // Add current to the closed array
         this.closed.push(_.cloneDeep(this.current));
         // Add children to the open list
-        this.open = _.cloneDeep(this.children);
-
-        // Filter open list to remove occurrences of closed list
+        this.children.forEach((ele) => {
+          this.open.push(_.cloneDeep(ele));
+        });
         console.log('Before filter', this.open);
+        // Filter open list to remove occurrences of closed list
         this.open.forEach((ele) => {
           if (
             this.closed.some((closeEle) =>
@@ -306,15 +329,13 @@ class Puzzle {
         });
 
         if (nodesFound.length > 0) {
-          this.open = this.open.filter((ele) =>
-            nodesFound.some(
-              (nodeEle) =>
-                JSON.stringify(ele.puzzle) !== JSON.stringify(nodeEle)
-            )
-          );
+          _.remove(this.open, (ele) => {
+            return nodesFound.some((element) => _.isEqual(element, ele.puzzle));
+          });
         }
         console.log('After filter', this.open);
       }
+      this.height++;
       console.log(this.height);
     }
 
@@ -388,11 +409,18 @@ class Puzzle {
 // ];
 
 // MEDIUM
-const start = [
-  [2, 8, 1],
-  [0, 4, 3],
-  [7, 6, 5],
-];
+// const start = [
+//   [2, 8, 1],
+//   [0, 4, 3],
+//   [7, 6, 5],
+// ];
+
+// HARD
+// const start = [
+//   [2, 8, 1],
+//   [4, 6, 3],
+//   [0, 7, 5],
+// ];
 
 const goal = [
   [1, 2, 3],
@@ -400,7 +428,7 @@ const goal = [
   [7, 6, 5],
 ];
 
-// Puzzle correctly done: EASY
+// Puzzle correctly done: EASY, MEDIUM
 
 const solver = new Puzzle(start, goal);
 console.log(solver.solve());
